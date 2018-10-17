@@ -2,8 +2,10 @@ package com.mobiledev.tictactoe;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -17,7 +19,6 @@ import android.widget.Toast;
 
 public class TicTacToeActivity extends AppCompatActivity {
 
-    static final int DIALOG_DIFFICULTY_ID = 0;
     static final int DIALOG_QUIT_ID = 1;
 
 
@@ -38,6 +39,7 @@ public class TicTacToeActivity extends AppCompatActivity {
     private int mComputerWins = 0;
     private int mTies = 0;
     private char mGoFirst;
+    private boolean mSoundOn;
 
     private SharedPreferences mPrefs;
 
@@ -78,6 +80,16 @@ public class TicTacToeActivity extends AppCompatActivity {
         }
         displayScores();
 
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        mSoundOn = mPrefs.getBoolean("sound", true);
+        String difficultyLevel = mPrefs.getString("difficulty_level",
+                getResources().getString(R.string.difficulty_harder));
+        if (difficultyLevel.equals(getResources().getString(R.string.difficulty_easy)))
+            mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Easy);
+        else if (difficultyLevel.equals(getResources().getString(R.string.difficulty_harder)))
+            mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Harder);
+        else
+            mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Expert);
     }
 
     public void startNewGame(){
@@ -120,8 +132,8 @@ public class TicTacToeActivity extends AppCompatActivity {
             case R.id.new_game:
                 startNewGame();
                 return true;
-            case R.id.ai_difficulty:
-                showDialog(DIALOG_DIFFICULTY_ID);
+            case R.id.settings:
+                startActivityForResult(new Intent(this, Settings.class), 0);
                 return true;
             case R.id.reset_scores:
                 mHumanWins = 0;
@@ -143,7 +155,7 @@ public class TicTacToeActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         switch(id) {
-            case DIALOG_DIFFICULTY_ID:
+            /*case DIALOG_DIFFICULTY_ID:
 
                 builder.setTitle(R.string.difficulty_choose);
 
@@ -175,7 +187,7 @@ public class TicTacToeActivity extends AppCompatActivity {
                 dialog = builder.create();
 
                 break;
-
+*/
             case DIALOG_QUIT_ID:
                 // Create the quit confirmation dialog
 
@@ -199,15 +211,20 @@ public class TicTacToeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
         mHumanMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.big_explosion_cut_off);
         mComputerMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.crash);
+        if(mSoundOn){
+            mHumanMediaPlayer.setVolume(1,1);
+            mComputerMediaPlayer.setVolume(1,1);
+        }else{
+            mHumanMediaPlayer.setVolume(0,0);
+            mComputerMediaPlayer.setVolume(0,0);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
         mHumanMediaPlayer.release();
         mComputerMediaPlayer.release();
     }
@@ -254,13 +271,17 @@ public class TicTacToeActivity extends AppCompatActivity {
                 else if (winner == 1) {
                     mInfoTextView.setText("It's a tie!");
                     mTies++;
+                    displayScores();
                 }
                 else if (winner == 2) {
-                    mInfoTextView.setText("You won!");
                     mHumanWins++;
+                    displayScores();
+                    String defaultMessage = getResources().getString(R.string.result_human_wins);
+                    mInfoTextView.setText(mPrefs.getString("victory_message", defaultMessage));
                 } else if (winner == 3){
                     mInfoTextView.setText("Android won!");
                     mComputerWins++;
+                    displayScores();
                 }
 
             }
@@ -299,5 +320,26 @@ public class TicTacToeActivity extends AppCompatActivity {
         ed.commit();
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
+        if (requestCode == RESULT_CANCELED) {
+            // Apply potentially new settings
+
+            mSoundOn = mPrefs.getBoolean("sound", true);
+
+            String difficultyLevel = mPrefs.getString("difficulty_level",
+                    getResources().getString(R.string.difficulty_harder));
+
+            if (difficultyLevel.equals(getResources().getString(R.string.difficulty_easy)))
+                mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Easy);
+            else if (difficultyLevel.equals(getResources().getString(R.string.difficulty_harder)))
+                mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Harder);
+            else
+                mGame.setDifficultyLevel(TicTacToeGame.DifficultyLevel.Expert);
+
+            mHumanMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.big_explosion_cut_off);
+            mComputerMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.crash);
+        }
+    }
 }

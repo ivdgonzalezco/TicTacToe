@@ -77,17 +77,13 @@ public class BoardView extends View {
             int right = cellWidth * (col + 1);
             int bottom = cellHeight * (row + 1);
 
-            System.out.println(mGame.getBoardOccupant(i));
-
             if (mGame != null && mGame.getBoardOccupant(i) == TicTacToeGame.HUMAN_PLAYER) {
-                System.out.println("Helloweed");
                 canvas.drawBitmap(mHumanBitmap,
                         null,  // src
                         new Rect(left, top, right, bottom),
                         null);
             }
             else if (mGame != null && mGame.getBoardOccupant(i) == TicTacToeGame.COMPUTER_PLAYER) {
-                System.out.println("Helloween");
                 canvas.drawBitmap(mComputerBitmap,
                         null,  // src
                         new Rect(left, top, right, bottom),
